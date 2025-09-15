@@ -1,6 +1,6 @@
 # ScheduleBud: AI-Powered Academic Management Platform
 
-[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.netlify.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
+[![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
 
 **Live Application:** [**https://schedulebud.app**](https://schedulebud.app/)
 
@@ -16,16 +16,38 @@ A live video demo can be found here: [ScheduleBud Demo](https://youtu.be/zztlhaF
 
 | Frontend | Backend | AI/ML | Infrastructure | Payments | Testing |
 |---|---|---|---|---|---|
-| ![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=white) | ![Supabase](https://img.shields.io/badge/-Supabase-3FCF8E?logo=supabase&logoColor=white) | ![Google Gemini](https://img.shields.io/badge/-Google%20Gemini-8A2BE2?logo=google&logoColor=white) | ![Netlify](https://img.shields.io/badge/-Netlify-00C7B7?logo=netlify&logoColor=white) | ![Stripe](https://img.shields.io/badge/-Stripe-6772E5?logo=stripe&logoColor=white) | ![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?logo=playwright&logoColor=white) |
-| ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) | ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white) | ![Hugging Face](https://img.shields.io/badge/-Hugging%20Face-FFD000?logo=huggingface&logoColor=white) | ![Vercel](https://img.shields.io/badge/-Vercel-000000?logo=vercel&logoColor=white) | | ![Jest](https://img.shields.io/badge/-Jest-C21325?logo=jest&logoColor=white) |
+| ![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=white) | ![Supabase](https://img.shields.io/badge/-Supabase-3FCF8E?logo=supabase&logoColor=white) | ![Google Gemini](https://img.shields.io/badge/-Google%20Gemini-8A2BE2?logo=google&logoColor=white) | ![Render](https://img.shields.io/badge/-Render-46E3B7?logo=render&logoColor=white) | ![Stripe](https://img.shields.io/badge/-Stripe-6772E5?logo=stripe&logoColor=white) | ![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?logo=playwright&logoColor=white) |
+| ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) | ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white) | ![Hugging Face](https://img.shields.io/badge/-Hugging%20Face-FFD000?logo=huggingface&logoColor=white) | | | ![Jest](https://img.shields.io/badge/-Jest-C21325?logo=jest&logoColor=white) |
 | ![Tailwind CSS](https://img.shields.io/badge/-Tailwind%20CSS-06B6D4?logo=tailwind-css&logoColor=white) | ![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white) | ![pgvector](https://img.shields.io/badge/-pgvector-2F69AD?logo=postgresql&logoColor=white) | | | |
-| ![Tailwind CSS](https://img.shields.io/badge/-Tailwind%20CSS-06B6D4?logo=tailwind-css&logoColor=white) | ![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white) | | | | |
 
 ## System Architecture
 
 The system is designed as a modern single-page application (SPA) with a decoupled frontend and backend. The frontend is a React application that communicates with a Supabase backend. Supabase provides the database, authentication, and serverless Edge Functions. For AI-powered features, the Edge Functions call the Google Gemini API.
 
-*[Placeholder for an embedded architectural diagram from Excalidraw or Lucidchart. The diagram would visually represent the flow below.]*
+```mermaid
+graph TD
+    subgraph "User's Browser"
+        A[Frontend (React SPA)]
+    end
+
+    subgraph "Supabase Cloud"
+        B[API Gateway]
+        C[Authentication]
+        D[PostgreSQL Database with RLS]
+        E[Edge Function (Deno)]
+    end
+
+    subgraph "Third-Party Services"
+        F[Google Gemini API]
+    end
+
+    A -- HTTPS Request --> B
+    B -- Authenticates via --> C
+    B -- Proxies to --> E
+    A -- Database queries via --> B
+    B -- Enforces RLS --> D
+    E -- HTTPS Request --> F
+```
 
 **Data Flow:**
 `Frontend (React) -> Supabase Backend (API Gateway) -> Supabase Edge Function -> Google Gemini API`

@@ -2,7 +2,7 @@
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.netlify.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
 
-**Live Application:** [**https://schedulebud.netlify.app/**](https://schedulebud.netlify.app/)
+**Live Application:** [**https://schedulebud.app**](https://schedulebud.app/)
 
 ## Project Overview
 

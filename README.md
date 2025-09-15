@@ -1,3 +1,5 @@
+---
+
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -22,96 +24,97 @@ A live video demo can be found here: [ScheduleBud Demo](https://youtu.be/zztlhaF
 
 ## System Architecture
 
-The system is designed as a modern single-page application (SPA) with a decoupled frontend and backend. The frontend is a React application that communicates with a Supabase backend. Supabase provides the database, authentication, and serverless Edge Functions. For AI-powered features, the Edge Functions call the Google Gemini API.
+The system is a modern SPA with a decoupled frontend and backend, built on Supabase for the database, authentication, and serverless Edge Functions. For AI features, the Edge Functions securely call the Google Gemini API.
 
 ```mermaid
 graph TD
     subgraph "User Browser"
-        A["Frontend (React SPA)"]
+        A[Frontend / React SPA]
     end
 
     subgraph "Supabase Cloud"
-        B["API Gateway"]
-        C["Authentication"]
-        D["PostgreSQL Database with RLS"]
-        E["Edge Function (Deno)"]
+        B[API Gateway]
+        C[Authentication]
+        D[PostgreSQL Database w/ RLS]
+        E[Edge Function / Deno]
     end
 
-    subgraph "Third-Party Services"
-        F["Google Gemini API"]
+    subgraph "Google Cloud"
+        F[Gemini Flash 2.0 API]
     end
 
-    A -- "HTTPS Request" --> B
-    B -- "Authenticates via" --> C
+    A -- "API Request (RPC)" --> B
+    B -- "Validates JWT" --> C
     B -- "Proxies to" --> E
-    A -- "Database queries via" --> B
-    B -- "Enforces RLS" --> D
-    E -- "HTTPS Request" --> F
+    B -- "Enforces RLS Policies" --> D
+    E -- "Syllabus Content" --> F
+    F -- "Structured JSON" --> E
 ```
-
-**Data Flow:**
-`Frontend (React) -> Supabase Backend (API Gateway) -> Supabase Edge Function -> Google Gemini API`
 
 ## Key Features & Technical Deep Dive
 
 ### 1. AI-Powered Syllabus Parsing
 
-**Feature:** ScheduleBud can take a course syllabus in PDF or DOCX format and automatically parse it to extract all assignments, exams, and other important dates. It then populates the user's calendar with this information, saving hours of manual data entry.
+**Feature:** Saves students hours of manual data entry by automatically parsing PDF/DOCX syllabi, extracting all assignments and exams, and populating their calendar in seconds.
 
-**Technical Implementation:** This feature is powered by a Supabase Edge Function written in TypeScript. When a user uploads a syllabus, the file is sent to the Edge Function. The function uses the Google Gemini API to analyze the document's content and return a structured JSON object containing the extracted tasks. This JSON is then used to create tasks in the database. The system is designed to be highly accurate, with a success rate of over 95% in correctly identifying and scheduling tasks.
+**Technical Implementation:** This is powered by a Supabase Edge Function written in TypeScript. On upload, the file's text content is sent to the function. It then calls the Google Gemini Flash 2.0 model with a carefully engineered prompt to analyze the text and return a structured JSON object of tasks. This JSON is then used to populate the user's calendar with over 95% accuracy.
 
-**Code Snippet (Supabase Edge Function):**
-This snippet shows the core logic for processing a document with the Gemini API.
+**Code Snippet (Core AI Logic):**
+This snippet shows the robust, focused function for processing syllabus text with the Gemini API.
 
-'''typescript
-// backend/supabase/functions/parse-syllabus/index.ts
+```typescript
+// backend/supabase/functions/shared/ai-parser.ts
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
 
-serve(async (req) => {
-  const { fileContent, mimeType } = await req.json();
-  const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY"));
-  const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+// Initialize the AI model once for efficiency
+const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY"));
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
+interface Task {
+  task: string;
+  dueDate: string; // YYYY-MM-DD format
+  type: "Assignment" | "Exam" | "Quiz" | "Other";
+}
+
+/**
+ * Parses raw text from a syllabus to extract structured academic tasks.
+ * @param syllabusText The raw text content of the syllabus.
+ * @returns A promise that resolves to an array of structured Task objects.
+ */
+export async function parseSyllabus(syllabusText: string): Promise<Task[]> {
   const prompt = `
-    Analyze the following academic syllabus.
-    Extract all assignments, exams, and deadlines.
-    Return a JSON array of objects with the following structure:
-    { "task": "Assignment Name", "dueDate": "YYYY-MM-DD", "type": "Assignment/Exam" }
+    You are an academic assistant. Analyze the following syllabus text and extract all assignments, exams, and deadlines.
+    Strictly return only a valid JSON array of objects with this structure:
+    { "task": "Assignment Name", "dueDate": "YYYY-MM-DD", "type": "Assignment/Exam/Quiz/Other" }
+    Do not include any explanatory text, markdown, or any characters before or after the JSON array.
   `;
 
-  const result = await model.generateContent([prompt, {
-    inlineData: {
-      data: fileContent,
-      mimeType
-    }
-  }]);
-
-  const response = await result.response;
-  const text = response.text();
-
-  // Basic cleanup to extract JSON from the response
-  const jsonText = text.substring(text.indexOf("["), text.lastIndexOf("]") + 1);
-  const tasks = JSON.parse(jsonText);
-
-  return new Response(
-    JSON.stringify({ tasks }),
-    { headers: { "Content-Type": "application/json" } },
-  )
-});
-'''
+  try {
+    const result = await model.generateContent([prompt, syllabusText]);
+    const response = await result.response;
+    const jsonText = response.text();
+    
+    // The robust prompt ensures the response should be clean JSON
+    return JSON.parse(jsonText) as Task[];
+  } catch (error) {
+    console.error("Error parsing syllabus with Gemini API:", error);
+    // Return an empty array or throw a custom error for the calling function to handle
+    return [];
+  }
+}
+```
 
 ### 2. Multi-Tenant Data Privacy with Row-Level Security (RLS)
 
-**Feature:** ScheduleBud is a multi-tenant application where users can store sensitive academic data. It is critical that users can only access their own information.
+**Feature:** ScheduleBud is a multi-tenant application where users store sensitive academic data. It is critical that users can only access their own information.
 
 **Technical Implementation:** To ensure strict data privacy, I designed the PostgreSQL schema with user ownership in mind and implemented Supabase's Row-Level Security (RLS). Every table that contains user data has an RLS policy that prevents users from accessing data that does not belong to them. This is enforced at the database level, providing a robust security guarantee that cannot be bypassed by client-side code.
 
 **Code Snippet (PostgreSQL RLS Policy):**
 This SQL snippet shows a typical RLS policy for the `tasks` table. It ensures that a user can only perform operations on tasks that they own.
 
-'''sql
+```sql
 -- Enable Row-Level Security on the 'tasks' table
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 
@@ -134,7 +137,7 @@ USING (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own tasks"
 ON public.tasks FOR DELETE
 USING (auth.uid() = user_id);
-'''
+```
 
 ## Challenges & Solutions
 

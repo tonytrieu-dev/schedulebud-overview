@@ -26,27 +26,27 @@ The system is designed as a modern single-page application (SPA) with a decouple
 
 ```mermaid
 graph TD
-    subgraph "User's Browser"
-        A[Frontend (React SPA)]
+    subgraph "User Browser"
+        A["Frontend (React SPA)"]
     end
 
     subgraph "Supabase Cloud"
-        B[API Gateway]
-        C[Authentication]
-        D[PostgreSQL Database with RLS]
-        E[Edge Function (Deno)]
+        B["API Gateway"]
+        C["Authentication"]
+        D["PostgreSQL Database with RLS"]
+        E["Edge Function (Deno)"]
     end
 
     subgraph "Third-Party Services"
-        F[Google Gemini API]
+        F["Google Gemini API"]
     end
 
-    A -- HTTPS Request --> B
-    B -- Authenticates via --> C
-    B -- Proxies to --> E
-    A -- Database queries via --> B
-    B -- Enforces RLS --> D
-    E -- HTTPS Request --> F
+    A -- "HTTPS Request" --> B
+    B -- "Authenticates via" --> C
+    B -- "Proxies to" --> E
+    A -- "Database queries via" --> B
+    B -- "Enforces RLS" --> D
+    E -- "HTTPS Request" --> F
 ```
 
 **Data Flow:**

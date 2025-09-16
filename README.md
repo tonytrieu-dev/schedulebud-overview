@@ -40,16 +40,33 @@ graph LR
         A[Frontend: React SPA]
     end
 
-    subgraph "Backend Platform (Supabase)"
+    %% Main Backend Platform Subgraph
+    subgraph P1[ ]
+        direction LR
+        style P1 fill:#f9f7e8,stroke:#e0dcca
+
+        %% Manual Title Node for Backend Platform
+        P_Title["<b>Backend Platform (Supabase)</b>"]
+        style P_Title fill:none,stroke:none,font-weight:bold,font-size:1.1em
+
         B[API Gateway & Auth]
         C[PostgreSQL Database w/ RLS]
         E[File Storage]
         
-        %% Serverless Microservices are logically grouped here
-        F1["ask-chatbot (RAG Pipeline)"]
-        F2["embed-file (Data Ingestion)"]
-        F3["stripe-webhook (Payments)"]
-        F4["ai-analysis (Structured Extraction)"]
+        %% Serverless Microservices Group
+        subgraph F_Group [ ]
+            direction LR
+            style F_Group fill:#f9f7e8,stroke:#d3d0b8,stroke-dasharray: 5 5
+
+            %% Manual Title Node for Serverless Microservices
+            F_Title["<b>Serverless Microservices (Edge Functions)</b>"]
+            style F_Title fill:none,stroke:none,font-weight:normal,font-style:italic,font-size:1em
+
+            F1["ask-chatbot (RAG Pipeline)"]
+            F2["embed-file (Data Ingestion)"]
+            F3["stripe-webhook (Payments)"]
+            F4["ai-analysis (Structured Extraction)"]
+        end
     end
 
     subgraph "Third-Party Services"
@@ -81,8 +98,7 @@ graph LR
     F3 -- "Webhook Events" --> H
     F3 -- "Updates Subscription" --> C
 
-    F4 -- "Structured Data Calls" --> G
-```
+    F4 -- "Structured Data Calls" --> G```
 
 ## Key Architectural Features & Implementations
 

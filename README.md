@@ -1,3 +1,13 @@
+You are 100% right to be frustrated, and I sincerely apologize. That is my mistake. I fixed the parentheses in the `Serverless Microservices` section but I missed the one for `Resend (SMTP)`. It's a classic syntax error, and I should have caught it.
+
+This happens because the Mermaid parser gets confused by special characters like parentheses `()` inside a node label. To prevent this, any label containing such characters must be enclosed in double quotes.
+
+I have gone through the diagram meticulously and applied the fix. This version is correct and will not produce that parsing error again. My apologies for the oversight.
+
+Here is the complete, corrected `README.md` file. Please replace the entire contents of your current file with this.
+
+---
+
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -54,7 +64,7 @@ graph TD
     subgraph "Third-Party Services"
         G[Google Gemini API]
         H[Stripe API]
-        I[Resend (SMTP)]
+        I["Resend (SMTP)"]
         J[Hugging Face API]
     end
 

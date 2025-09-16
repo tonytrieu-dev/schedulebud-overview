@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-ScheduleBud is an AI-native, full-stack productivity platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by syncing Canvas LMS assignments from Canvas calendar .ics links provided by students, AI-powered syllabus parsing, a built-in smart chatbot, and real-time task management into a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
+ScheduleBud is an AI-native, full-stack productivity platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by syncing Canvas LMS assignments from `.ics` calendar links, parsing syllabi with AI, providing a smart chatbot, and offering real-time task management in a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
 
 ## Live Demo
 
@@ -18,99 +18,92 @@ A live video demo can be found here: [ScheduleBud Demo](https://youtu.be/zztlhaF
 |---|---|---|---|---|---|
 | ![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=white) | ![Supabase](https://img.shields.io/badge/-Supabase-3FCF8E?logo=supabase&logoColor=white) | ![Google Gemini](https://img.shields.io/badge/-Google%20Gemini-8A2BE2?logo=google&logoColor=white) | ![Render](https://img.shields.io/badge/-Render-46E3B7?logo=render&logoColor=white) | ![Stripe](https://img.shields.io/badge/-Stripe-6772E5?logo=stripe&logoColor=white) | ![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?logo=playwright&logoColor=white) |
 | ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) | ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white) | ![Hugging Face](https://img.shields.io/badge/-Hugging%20Face-FFD000?logo=huggingface&logoColor=white) | | | ![Jest](https://img.shields.io/badge/-Jest-C21325?logo=jest&logoColor=white) |
-| ![Tailwind CSS](https://img.shields.io/badge/-Tailwind%20CSS-06B6D4?logo=tailwind-css&logoColor=white) | ![Node.js](https://img.shields.io/badge/-Node.js-339933?logo=node.js&logoColor=white) | ![pgvector](https://img.shields.io/badge/-pgvector-2F69AD?logo=postgresql&logoColor=white) | | | |
+| ![Tailwind CSS](https://img.shields.io/badge/-Tailwind%20CSS-06B6D4?logo=tailwind-css&logoColor=white) | ![Deno](https://img.shields.io/badge/-Deno-000000?logo=deno&logoColor=white) | ![pgvector](https://img.shields.io/badge/-pgvector-2F69AD?logo=postgresql&logoColor=white) | | | |
 
-## System Architecture
+## High-Level System Design
 
-The system is a modern SPA with a decoupled frontend and backend, built on Supabase for the database, authentication, and serverless Edge Functions. For AI features, the Edge Functions securely call the Google Gemini API.
+My design for ScheduleBud was driven by five core principles, essential for a solo engineer building a production-ready application:
+
+1.  **Serverless-First:** Eliminate infrastructure management by using serverless functions for all custom backend logic, ensuring automatic scaling and reducing operational overhead.
+2.  **Maximize Velocity with Managed Services:** Leverage a Backend-as-a-Service (Supabase) for commodity components like user auth and a basic CRUD API, allowing me to focus engineering effort on unique, value-adding features.
+3.  **Security at the Core:** Implement security at the lowest possible layer (the database) using Row-Level Security (RLS) and create secure boundaries for all external service interactions.
+4.  **Resilience and Fallbacks:** Acknowledge that external services and complex processes can fail. The system must be designed to be self-healing, handle errors gracefully, and use fallback mechanisms wherever possible.
+5.  **Cost Optimization:** Design the system to be intelligent about resource usage, especially expensive AI API calls, by implementing smart routing and caching.
+
+Based on these principles, I architected ScheduleBud as a decoupled, multi-tier system. It consists of a React SPA frontend, a central BaaS platform, and a suite of specialized serverless microservices that handle complex, asynchronous tasks.
 
 ```mermaid
 graph TD
-    subgraph "User Browser"
-        A[Frontend / React SPA]
+    subgraph "User's Device"
+        A[Frontend: React SPA]
     end
 
-    subgraph "Supabase Cloud"
-        B[API Gateway]
-        C[Authentication]
-        D[PostgreSQL Database w/ RLS]
-        E[Edge Function / Deno]
+    subgraph "Backend Platform (Supabase)"
+        B[API Gateway & Auth]
+        C[PostgreSQL Database w/ RLS]
+        E[File Storage]
+        
+        subgraph "Serverless Microservices (Edge Functions)"
+            F1[ask-chatbot (RAG Pipeline)]
+            F2[embed-file (Data Ingestion)]
+            F3[stripe-webhook (Payments)]
+            F4[ai-analysis (Structured Extraction)]
+        end
     end
 
-    subgraph "Google Cloud"
-        F[Gemini Flash 2.0 API]
+    subgraph "Third-Party Services"
+        G[Google Gemini API]
+        H[Stripe API]
+        I[Resend (SMTP)]
+        J[Hugging Face API]
     end
 
-    A -- "API Request (RPC)" --> B
-    B -- "Validates JWT" --> C
-    B -- "Proxies to" --> E
-    B -- "Enforces RLS Policies" --> D
-    E -- "Syllabus Content" --> F
-    F -- "Structured JSON" --> E
-```
+    A -- "API Calls & Real-time Stream" --> B
+    B -- "Invokes" --> F1 & F2 & F3 & F4
+    B -- "Manages Auth, RLS, Storage" --> C & E
+    B -- "SMTP Integration" --> I
 
-## Key Features & Technical Deep Dive
-
-### 1. AI-Powered Syllabus Parsing
-
-**Feature:** Saves students hours of manual data entry by automatically parsing PDF/DOCX syllabi, extracting all assignments and exams, and populating their calendar in seconds.
-
-**Technical Implementation:** This is powered by a Supabase Edge Function written in TypeScript. On upload, the file's text content is sent to the function. It then calls the Google Gemini Flash 2.0 model with a carefully engineered prompt to analyze the text and return a structured JSON object of tasks. This JSON is then used to populate the user's calendar with over 95% accuracy.
-
-**Code Snippet (Core AI Logic):**
-This snippet shows the robust, focused function for processing syllabus text with the Gemini API.
-
-```typescript
-// backend/supabase/functions/shared/ai-parser.ts
-
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
-
-// Initialize the AI model once for efficiency
-const genAI = new GoogleGenerativeAI(Deno.env.get("GEMINI_API_KEY"));
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-
-interface Task {
-  task: string;
-  dueDate: string; // YYYY-MM-DD format
-  type: "Assignment" | "Exam" | "Quiz" | "Other";
-}
-
-/**
- * Parses raw text from a syllabus to extract structured academic tasks.
- * @param syllabusText The raw text content of the syllabus.
- * @returns A promise that resolves to an array of structured Task objects.
- */
-export async function parseSyllabus(syllabusText: string): Promise<Task[]> {
-  const prompt = `
-    You are an academic assistant. Analyze the following syllabus text and extract all assignments, exams, and deadlines.
-    Strictly return only a valid JSON array of objects with this structure:
-    { "task": "Assignment Name", "dueDate": "YYYY-MM-DD", "type": "Assignment/Exam/Quiz/Other" }
-    Do not include any explanatory text, markdown, or any characters before or after the JSON array.
-  `;
-
-  try {
-    const result = await model.generateContent([prompt, syllabusText]);
-    const response = await result.response;
-    const jsonText = response.text();
+    F1 -- "Vector Search (RPC)" --> C
+    F1 -- "Streaming & Non-Streaming Calls" --> G
     
-    // The robust prompt ensures the response should be clean JSON
-    return JSON.parse(jsonText) as Task[];
-  } catch (error) {
-    console.error("Error parsing syllabus with Gemini API:", error);
-    // Return an empty array or throw a custom error for the calling function to handle
-    return [];
-  }
-}
+    F2 -- "File Download" --> E
+    F2 -- "Embedding Generation" --> J
+    F2 -- "Writes Embeddings" --> C
+
+    F3 -- "Webhook Events" --> H
+    F3 -- "Updates Subscription" --> C
+
+    F4 -- "Structured Data Calls" --> G
 ```
 
-### 2. Multi-Tenant Data Privacy with Row-Level Security (RLS)
+## Backend Subsystem Deep Dive
 
-**Feature:** ScheduleBud is a multi-tenant application where users store sensitive academic data. It is critical that users can only access their own information.
+### 1. The Stateful, Context-Aware AI Chatbot (RAG Pipeline)
 
-**Technical Implementation:** To ensure strict data privacy, I designed the PostgreSQL schema with user ownership in mind and implemented Supabase's Row-Level Security (RLS). Every table that contains user data has an RLS policy that prevents users from accessing data that does not belong to them. This is enforced at the database level, providing a robust security guarantee that cannot be bypassed by client-side code.
+**Feature:** A chatbot that provides personalized, context-aware, and accurate answers based on a user's private data, conversation history, and real-time task schedule.
+
+**Technical Implementation:** I architected a complete **Retrieval-Augmented Generation (RAG)** pipeline as a serverless function. It uses a `classifyQueryIntent` algorithm to intelligently decide whether to perform an expensive vector search, a simple database query, or a direct LLM call, optimizing cost and latency. The system is self-healing: if a document search fails because files aren't processed, it auto-triggers the embedding function and retries. For a seamless UX, it uses a streaming connection to the Gemini API and serves the response via Server-Sent Events (SSE), with a robust buffer-based parser to prevent text truncation.
+
+### 2. The Secure Data Ingestion & Embedding Pipeline
+
+**Feature:** A secure pipeline to process user-uploaded syllabi (PDFs/DOCX), extract their content, and transform them into searchable vector embeddings.
+
+**Technical Implementation:** This serverless function is designed for resilience and security. It uses a two-stage parsing system, trying a fast library first and then falling back to the more robust `pdfjs-dist` to maximize success. All extracted text is sanitized and validated against security patterns before processing. To ensure data integrity, the function is **idempotent**, deleting any stale embeddings for a file before generating new ones.
+
+### 3. The Event-Driven Payments System
+
+**Feature:** A reliable system to manage user subscriptions and synchronize payment status with Stripe.
+
+**Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
+
+### 4. Multi-Tenant Data Privacy with Row-Level Security (RLS)
+
+**Feature:** A foundational security guarantee ensuring users can only ever access their own information in a multi-tenant environment.
+
+**Technical Implementation:** Security is enforced at the database level. I designed the PostgreSQL schema with data ownership as a core principle, with every relevant table containing a `user_id`. I then wrote strict **Row-Level Security (RLS) policies** for each table. This provides a powerful security backstop that cannot be bypassed by application-level code, guaranteeing data privacy.
 
 **Code Snippet (PostgreSQL RLS Policy):**
-This SQL snippet shows a typical RLS policy for the `tasks` table. It ensures that a user can only perform operations on tasks that they own.
+This SQL snippet shows a typical RLS policy for the `tasks` table.
 
 ```sql
 -- Enable Row-Level Security on the 'tasks' table
@@ -125,26 +118,10 @@ USING (auth.uid() = user_id);
 CREATE POLICY "Users can create their own tasks"
 ON public.tasks FOR INSERT
 WITH CHECK (auth.uid() = user_id);
-
--- Create a policy that allows users to update their own tasks
-CREATE POLICY "Users can update their own tasks"
-ON public.tasks FOR UPDATE
-USING (auth.uid() = user_id);
-
--- Create a policy that allows users to delete their own tasks
-CREATE POLICY "Users can delete their own tasks"
-ON public.tasks FOR DELETE
-USING (auth.uid() = user_id);
 ```
 
 ## Challenges & Solutions
 
 **Challenge: Ensuring data privacy for a multi-tenant application.**
 
-One of the biggest challenges was designing a system where multiple users could store their personal academic data with the absolute guarantee that their information would remain private. A simple mistake in a query could potentially expose one user's data to another.
-
-**Solution: A combination of schema design and database-level security.**
-
-I solved this by making data ownership a core principle of the database schema. Every table containing user-generated content has a `user_id` column that links to the `auth.users` table provided by Supabase.
-
-Then, I implemented Row-Level Security (RLS) policies on all relevant tables. As shown in the code snippet above, these policies are not just an afterthought; they are a fundamental part of the security model. By enforcing data access rules at the database level, RLS provides a much stronger security guarantee than application-level checks. This approach ensures that even if there were a bug in the application code, the database would still prevent unauthorized data access, effectively creating a powerful security backstop.
+**Solution: A combination of schema design and database-level security.** I made data ownership a core principle of the database schema, with a `user_id` column linking to Supabase's `auth.users` table. By implementing RLS policies at the database level, I created a fundamental security model that ensures even a bug in the application code would not lead to an unauthorized data access, effectively creating a powerful security backstop.

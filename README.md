@@ -1,3 +1,5 @@
+
+
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -33,7 +35,7 @@ My design for ScheduleBud was driven by five core principles, essential for a so
 Based on these principles, I architected ScheduleBud as a decoupled, multi-tier system. It consists of a React SPA frontend, a central BaaS platform, and a suite of specialized serverless microservices that handle complex, asynchronous tasks.
 
 ```mermaid
-graph TD
+graph LR
     subgraph "User's Device"
         A[Frontend: React SPA]
     end
@@ -43,7 +45,7 @@ graph TD
         C[PostgreSQL Database w/ RLS]
         E[File Storage]
         
-        %% Serverless Microservices (Edge Functions) are defined within the platform
+        %% Serverless Microservices are logically grouped here
         F1["ask-chatbot (RAG Pipeline)"]
         F2["embed-file (Data Ingestion)"]
         F3["stripe-webhook (Payments)"]
@@ -59,8 +61,14 @@ graph TD
 
     %% Define connections
     A -- "API Calls & Real-time Stream" --> B
-    B -- "Invokes" --> F1 & F2 & F3 & F4
-    B -- "Manages Auth, RLS, Storage" --> C & E
+    
+    B -- "Invokes" --> F1
+    B -- "Invokes" --> F2
+    B -- "Invokes" --> F3
+    B -- "Invokes" --> F4
+
+    B -- "Manages Auth, RLS, Storage" --> C
+    B -- "Manages Auth, RLS, Storage" --> E
     B -- "SMTP Integration" --> I
 
     F1 -- "Vector Search (RPC)" --> C
@@ -73,8 +81,7 @@ graph TD
     F3 -- "Webhook Events" --> H
     F3 -- "Updates Subscription" --> C
 
-    F4 -- "Structured Data Calls" --> G
-```
+    F4 -- "Structured Data Calls" --> G```
 
 ## Key Architectural Features & Implementations
 

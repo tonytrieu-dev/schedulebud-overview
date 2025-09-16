@@ -1,3 +1,4 @@
+
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -39,22 +40,15 @@ graph TD
     end
 
     subgraph "Backend Platform (Supabase)"
-        %% Invisible spacer node, defined first to ensure title space.
-        subgraph_spacer1[" "]
-
         B[API Gateway & Auth]
         C[PostgreSQL Database w/ RLS]
         E[File Storage]
         
-        subgraph "Serverless Microservices (Edge Functions)"
-            %% Invisible spacer node, defined first to ensure title space.
-            subgraph_spacer2[" "]
-
-            F1["ask-chatbot (RAG Pipeline)"]
-            F2["embed-file (Data Ingestion)"]
-            F3["stripe-webhook (Payments)"]
-            F4["ai-analysis (Structured Extraction)"]
-        end
+        %% Serverless Microservices (Edge Functions)
+        F1["ask-chatbot (RAG Pipeline)"]
+        F2["embed-file (Data Ingestion)"]
+        F3["stripe-webhook (Payments)"]
+        F4["ai-analysis (Structured Extraction)"]
     end
 
     subgraph "Third-Party Services"
@@ -63,10 +57,6 @@ graph TD
         I["Resend (SMTP)"]
         J[Hugging Face API]
     end
-
-    %% Style the spacer nodes to be completely invisible
-    style subgraph_spacer1 fill:none,stroke:none
-    style subgraph_spacer2 fill:none,stroke:none
 
     %% Define connections
     A -- "API Calls & Real-time Stream" --> B
@@ -84,8 +74,7 @@ graph TD
     F3 -- "Webhook Events" --> H
     F3 -- "Updates Subscription" --> C
 
-    F4 -- "Structured Data Calls" --> G
-```
+    F4 -- "Structured Data Calls" --> G```
 
 ## Key Architectural Features & Implementations
 

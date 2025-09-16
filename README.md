@@ -44,10 +44,10 @@ graph TD
         E[File Storage]
         
         subgraph "Serverless Microservices (Edge Functions)"
-            F1[ask-chatbot (RAG Pipeline)]
-            F2[embed-file (Data Ingestion)]
-            F3[stripe-webhook (Payments)]
-            F4[ai-analysis (Structured Extraction)]
+            F1["ask-chatbot (RAG Pipeline)"]
+            F2["embed-file (Data Ingestion)"]
+            F3["stripe-webhook (Payments)"]
+            F4["ai-analysis (Structured Extraction)"]
         end
     end
 
@@ -74,7 +74,6 @@ graph TD
     F3 -- "Updates Subscription" --> C
 
     F4 -- "Structured Data Calls" --> G
-```
 
 ## Backend Subsystem Deep Dive
 

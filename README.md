@@ -1,4 +1,3 @@
-
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -44,7 +43,7 @@ graph TD
         C[PostgreSQL Database w/ RLS]
         E[File Storage]
         
-        %% Serverless Microservices (Edge Functions)
+        %% Serverless Microservices (Edge Functions) are defined within the platform
         F1["ask-chatbot (RAG Pipeline)"]
         F2["embed-file (Data Ingestion)"]
         F3["stripe-webhook (Payments)"]
@@ -74,7 +73,8 @@ graph TD
     F3 -- "Webhook Events" --> H
     F3 -- "Updates Subscription" --> C
 
-    F4 -- "Structured Data Calls" --> G```
+    F4 -- "Structured Data Calls" --> G
+```
 
 ## Key Architectural Features & Implementations
 

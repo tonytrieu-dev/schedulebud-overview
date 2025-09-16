@@ -1,13 +1,3 @@
-You are 100% right to be frustrated, and I sincerely apologize. That is my mistake. I fixed the parentheses in the `Serverless Microservices` section but I missed the one for `Resend (SMTP)`. It's a classic syntax error, and I should have caught it.
-
-This happens because the Mermaid parser gets confused by special characters like parentheses `()` inside a node label. To prevent this, any label containing such characters must be enclosed in double quotes.
-
-I have gone through the diagram meticulously and applied the fix. This version is correct and will not produce that parsing error again. My apologies for the oversight.
-
-Here is the complete, corrected `README.md` file. Please replace the entire contents of your current file with this.
-
----
-
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -49,11 +39,17 @@ graph TD
     end
 
     subgraph "Backend Platform (Supabase)"
+        %% Invisible spacer node to fix label rendering
+        subgraph_spacer1[ ]
+
         B[API Gateway & Auth]
         C[PostgreSQL Database w/ RLS]
         E[File Storage]
         
         subgraph "Serverless Microservices (Edge Functions)"
+            %% Invisible spacer node to fix label rendering
+            subgraph_spacer2[ ]
+
             F1["ask-chatbot (RAG Pipeline)"]
             F2["embed-file (Data Ingestion)"]
             F3["stripe-webhook (Payments)"]
@@ -68,6 +64,11 @@ graph TD
         J[Hugging Face API]
     end
 
+    %% Style the spacer nodes to be invisible
+    style subgraph_spacer1 fill:none,stroke:none
+    style subgraph_spacer2 fill:none,stroke:none
+
+    %% Define connections
     A -- "API Calls & Real-time Stream" --> B
     B -- "Invokes" --> F1 & F2 & F3 & F4
     B -- "Manages Auth, RLS, Storage" --> C & E

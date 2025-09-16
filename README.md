@@ -74,36 +74,69 @@ graph TD
     F3 -- "Updates Subscription" --> C
 
     F4 -- "Structured Data Calls" --> G
+```
 
-## Backend Subsystem Deep Dive
+## Key Architectural Features & Implementations
 
 ### 1. The Stateful, Context-Aware AI Chatbot (RAG Pipeline)
-
 **Feature:** A chatbot that provides personalized, context-aware, and accurate answers based on a user's private data, conversation history, and real-time task schedule.
 
 **Technical Implementation:** I architected a complete **Retrieval-Augmented Generation (RAG)** pipeline as a serverless function. It uses a `classifyQueryIntent` algorithm to intelligently decide whether to perform an expensive vector search, a simple database query, or a direct LLM call, optimizing cost and latency. The system is self-healing: if a document search fails because files aren't processed, it auto-triggers the embedding function and retries. For a seamless UX, it uses a streaming connection to the Gemini API and serves the response via Server-Sent Events (SSE), with a robust buffer-based parser to prevent text truncation.
 
-### 2. The Secure Data Ingestion & Embedding Pipeline
+**Code Snippet (Query Intent Classification for Cost Optimization):**
+```typescript
+function classifyQueryIntent(
+  query: string, 
+  hasClassContext: boolean, 
+  hasConversationHistory: boolean
+): 'document_search' | 'task_related' | 'general_knowledge' | 'conversational' {
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  // Indicator keywords for different categories
+  const documentIndicators = ['syllabus', 'lecture', 'reading', 'according to'];
+  const taskIndicators = ['due', 'deadline', 'upcoming', 'overdue', 'my tasks'];
+  
+  // Priority scoring system to determine the most likely intent
+  let documentScore = 0;
+  let taskScore = 0;
 
+  documentIndicators.forEach(ind => normalizedQuery.includes(ind) ? documentScore += 2 : null);
+  taskIndicators.forEach(ind => normalizedQuery.includes(ind) ? taskScore += 2 : null);
+
+  if (hasClassContext && documentScore === 0) documentScore += 1;
+  if (hasConversationHistory && normalizedQuery.length < 30) return 'conversational';
+
+  // Determine the highest score to select the query type
+  const maxScore = Math.max(documentScore, taskScore);
+  
+  if (maxScore < 2) {
+    if (hasClassContext) return 'document_search';
+    return 'general_knowledge';
+  }
+  
+  return documentScore > taskScore ? 'document_search' : 'task_related';
+}
+```
+
+### 2. The Secure Data Ingestion & Embedding Pipeline
 **Feature:** A secure pipeline to process user-uploaded syllabi (PDFs/DOCX), extract their content, and transform them into searchable vector embeddings.
 
 **Technical Implementation:** This serverless function is designed for resilience and security. It uses a two-stage parsing system, trying a fast library first and then falling back to the more robust `pdfjs-dist` to maximize success. All extracted text is sanitized and validated against security patterns before processing. To ensure data integrity, the function is **idempotent**, deleting any stale embeddings for a file before generating new ones.
 
 ### 3. The Event-Driven Payments System
-
 **Feature:** A reliable system to manage user subscriptions and synchronize payment status with Stripe.
 
 **Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
 
-### 4. Multi-Tenant Data Privacy with Row-Level Security (RLS)
+## Key Challenge & Solution: Multi-Tenant Data Security
 
-**Feature:** A foundational security guarantee ensuring users can only ever access their own information in a multi-tenant environment.
+**Challenge:** One of the biggest challenges was designing a system where multiple users could store their personal academic data with the absolute guarantee that their information would remain private. A simple mistake in a query could potentially expose one user's data to another.
 
-**Technical Implementation:** Security is enforced at the database level. I designed the PostgreSQL schema with data ownership as a core principle, with every relevant table containing a `user_id`. I then wrote strict **Row-Level Security (RLS) policies** for each table. This provides a powerful security backstop that cannot be bypassed by application-level code, guaranteeing data privacy.
+**Solution:** I solved this by making data ownership a core principle of the database schema and enforcing security at the database level with **Row-Level Security (RLS)**. Every table containing user-generated content has a `user_id` column that links to the `auth.users` table.
+
+By implementing RLS policies on all relevant tables, I created a fundamental security model that cannot be bypassed by application-level code. This approach ensures that even if there were a bug in an API call, the database itself would still prevent unauthorized data access, effectively creating a powerful security backstop.
 
 **Code Snippet (PostgreSQL RLS Policy):**
-This SQL snippet shows a typical RLS policy for the `tasks` table.
-
 ```sql
 -- Enable Row-Level Security on the 'tasks' table
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
@@ -118,9 +151,3 @@ CREATE POLICY "Users can create their own tasks"
 ON public.tasks FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 ```
-
-## Challenges & Solutions
-
-**Challenge: Ensuring data privacy for a multi-tenant application.**
-
-**Solution: A combination of schema design and database-level security.** I made data ownership a core principle of the database schema, with a `user_id` column linking to Supabase's `auth.users` table. By implementing RLS policies at the database level, I created a fundamental security model that ensures even a bug in the application code would not lead to an unauthorized data access, effectively creating a powerful security backstop.

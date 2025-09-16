@@ -81,7 +81,8 @@ graph LR
     F3 -- "Webhook Events" --> H
     F3 -- "Updates Subscription" --> C
 
-    F4 -- "Structured Data Calls" --> G```
+    F4 -- "Structured Data Calls" --> G
+```
 
 ## Key Architectural Features & Implementations
 

@@ -39,16 +39,16 @@ graph TD
     end
 
     subgraph "Backend Platform (Supabase)"
-        %% Invisible spacer node to fix label rendering
-        subgraph_spacer1[ ]
+        %% Invisible spacer node, defined first to ensure title space.
+        subgraph_spacer1[" "]
 
         B[API Gateway & Auth]
         C[PostgreSQL Database w/ RLS]
         E[File Storage]
         
         subgraph "Serverless Microservices (Edge Functions)"
-            %% Invisible spacer node to fix label rendering
-            subgraph_spacer2[ ]
+            %% Invisible spacer node, defined first to ensure title space.
+            subgraph_spacer2[" "]
 
             F1["ask-chatbot (RAG Pipeline)"]
             F2["embed-file (Data Ingestion)"]
@@ -64,7 +64,7 @@ graph TD
         J[Hugging Face API]
     end
 
-    %% Style the spacer nodes to be invisible
+    %% Style the spacer nodes to be completely invisible
     style subgraph_spacer1 fill:none,stroke:none
     style subgraph_spacer2 fill:none,stroke:none
 

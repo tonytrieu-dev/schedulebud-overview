@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-ScheduleBud is an AI-native, full-stack productivity platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by integrating Canvas LMS data, AI-powered syllabus parsing, and real-time task management into a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
+ScheduleBud is an AI-native, full-stack productivity platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by syncing Canvas assignments from .ics links provided from students, AI-powered syllabus parsing, a built-in smart chatbot, and real-time task management into a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
 
 ## Live Demo
 

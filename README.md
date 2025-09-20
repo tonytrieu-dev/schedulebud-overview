@@ -1,5 +1,3 @@
-
-
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -66,6 +64,7 @@ graph LR
             F2["embed-file (Data Ingestion)"]
             F3["stripe-webhook (Payments)"]
             F4["ai-analysis (Structured Extraction)"]
+            F5["canvas-sync (ICS Calendar Parsing)"]
         end
     end
 
@@ -74,6 +73,7 @@ graph LR
         H[Stripe API]
         I["Resend (SMTP)"]
         J[Hugging Face API]
+        K[Canvas LMS ICS Feeds]
     end
 
     %% Define connections
@@ -83,6 +83,7 @@ graph LR
     B -- "Invokes" --> F2
     B -- "Invokes" --> F3
     B -- "Invokes" --> F4
+    B -- "Invokes" --> F5
 
     B -- "Manages Auth, RLS, Storage" --> C
     B -- "Manages Auth, RLS, Storage" --> E
@@ -99,6 +100,9 @@ graph LR
     F3 -- "Updates Subscription" --> C
 
     F4 -- "Structured Data Calls" --> G
+
+    F5 -- "Fetches ICS Calendar Data" --> K
+    F5 -- "Writes Parsed Tasks" --> C
 ```
 
 ## Key Architectural Features & Implementations
@@ -152,6 +156,11 @@ function classifyQueryIntent(
 **Feature:** A reliable system to manage user subscriptions and synchronize payment status with Stripe.
 
 **Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
+
+### 4. The Canvas LMS Integration System (ICS Calendar Parsing)
+**Feature:** Seamless synchronization of Canvas LMS assignments by parsing ICS calendar feeds, automatically importing due dates, assignment names, and course information into ScheduleBud.
+
+**Technical Implementation:** I built a serverless edge function that fetches and parses Canvas ICS calendar feeds server-side, completely bypassing CORS restrictions that plague client-side implementations. The system implements intelligent duplicate detection using Canvas UIDs to ensure assignments aren't duplicated on subsequent syncs. It includes robust error handling with exponential backoff retries and supports bulk assignment processing for courses with heavy assignment loads. The parser extracts course codes, assignment details, and due dates, automatically creating tasks with proper class associations and Canvas metadata for seamless integration.
 
 ## Key Challenge & Solution: Multi-Tenant Data Security
 

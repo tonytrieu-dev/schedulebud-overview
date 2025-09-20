@@ -12,7 +12,7 @@ ScheduleBud is an AI-native, full-stack productivity platform designed to help s
 
 ## Live Demo
 
-A live video demo can be found here: [ScheduleBud Demo](https://youtu.be/zztlhaFNqRM?si=7mF0thwUzSvvUwfq)
+A live video demo can be found here: [ScheduleBud Demo](https://youtu.be/TEmODMrIAvg)
 
 ## Tech Stack
 

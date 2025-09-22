@@ -1,3 +1,5 @@
+
+
 # ScheduleBud: AI-Powered Academic Management Platform
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%20Flash%202.0-purple)](https://deepmind.google/technologies/gemini/)
@@ -17,7 +19,7 @@ A live video demo can be found here: [ScheduleBud Demo](https://youtu.be/TEmODMr
 | Frontend | Backend | AI/ML | Infrastructure | Payments | Testing |
 |---|---|---|---|---|---|
 | ![React](https://img.shields.io/badge/-React-61DAFB?logo=react&logoColor=white) | ![Supabase](https://img.shields.io/badge/-Supabase-3FCF8E?logo=supabase&logoColor=white) | ![Google Gemini](https://img.shields.io/badge/-Google%20Gemini-8A2BE2?logo=google&logoColor=white) | ![Render](https://img.shields.io/badge/-Render-46E3B7?logo=render&logoColor=white) | ![Stripe](https://img.shields.io/badge/-Stripe-6772E5?logo=stripe&logoColor=white) | ![Playwright](https://img.shields.io/badge/-Playwright-2EAD33?logo=playwright&logoColor=white) |
-| ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) | ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white) | ![Hugging Face](https://img.shields.io/badge/-Hugging%20Face-FFD000?logo=huggingface&logoColor=white) | | | ![Jest](https://img.shields.io/badge/-Jest-C21325?logo=jest&logoColor=white) |
+| ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?logo=typescript&logoColor=white) | ![PostgreSQL](https://img.shields.io/badge/-PostgreSQL-4169E1?logo=postgresql&logoColor=white) | ![Hugging Face](https://img.shields.io/badge/-Hugging%20Face-FFD000?logo=huggingface&logoColor=white) | | | |
 | ![Tailwind CSS](https://img.shields.io/badge/-Tailwind%20CSS-06B6D4?logo=tailwind-css&logoColor=white) | ![Deno](https://img.shields.io/badge/-Deno-000000?logo=deno&logoColor=white) | ![pgvector](https://img.shields.io/badge/-pgvector-2F69AD?logo=postgresql&logoColor=white) | | | |
 
 ## High-Level System Design
@@ -87,7 +89,7 @@ graph LR
 
     B -- "Manages Auth, RLS, Storage" --> C
     B -- "Manages Auth, RLS, Storage" --> E
-    B -- "SMTP " --> I
+    B -- "SMTP Integration" --> I
 
     F1 -- "Vector Search (RPC)" --> C
     F1 -- "Streaming & Non-Streaming Calls" --> G
@@ -157,10 +159,15 @@ function classifyQueryIntent(
 
 **Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
 
-### 4. The Canvas LMS Implementation System (ICS Calendar Parsing)
+### 4. The Canvas LMS Integration System (ICS Calendar Parsing)
 **Feature:** Seamless synchronization of Canvas LMS assignments by parsing ICS calendar feeds, automatically importing due dates, assignment names, and course information into ScheduleBud.
 
 **Technical Implementation:** I built a serverless edge function that fetches and parses Canvas ICS calendar feeds server-side, completely bypassing CORS restrictions that plague client-side implementations. The system implements intelligent duplicate detection using Canvas UIDs to ensure assignments aren't duplicated on subsequent syncs. It includes robust error handling with exponential backoff retries and supports bulk assignment processing for courses with heavy assignment loads. The parser extracts course codes, assignment details, and due dates, automatically creating tasks with proper class associations and Canvas metadata for seamless integration.
+
+### 5. The AI-Powered Document Analysis Engine
+**Feature:** Intelligent extraction of structured academic metadata from user-uploaded documents, automatically detecting courses, assignments, due dates, and academic requirements from syllabi and course materials.
+
+**Technical Implementation:** I designed a specialized serverless edge function that leverages Google Gemini 2.0 Flash's structured output capabilities to parse academic documents and extract actionable task data. The system implements sophisticated JSON truncation recovery algorithms and domain-specific parsing for academic terminology (especially nursing/healthcare: ATI, HESI, clinical engagement). It handles complex date extraction from weekly ranges, checkbox assignments, and various academic formats, then stores the structured extraction results in PostgreSQL for integration with the task management system. This is separate from the embedding pipeline and focuses purely on extracting structured academic metadata rather than creating searchable vectors.
 
 ## Key Challenge & Solution: Multi-Tenant Data Security
 

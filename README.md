@@ -87,7 +87,7 @@ graph LR
 
     B -- "Manages Auth, RLS, Storage" --> C
     B -- "Manages Auth, RLS, Storage" --> E
-    B -- "SMTP Integration" --> I
+    B -- "SMTP " --> I
 
     F1 -- "Vector Search (RPC)" --> C
     F1 -- "Streaming & Non-Streaming Calls" --> G
@@ -157,7 +157,7 @@ function classifyQueryIntent(
 
 **Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
 
-### 4. The Canvas LMS Integration System (ICS Calendar Parsing)
+### 4. The Canvas LMS Implementation System (ICS Calendar Parsing)
 **Feature:** Seamless synchronization of Canvas LMS assignments by parsing ICS calendar feeds, automatically importing due dates, assignment names, and course information into ScheduleBud.
 
 **Technical Implementation:** I built a serverless edge function that fetches and parses Canvas ICS calendar feeds server-side, completely bypassing CORS restrictions that plague client-side implementations. The system implements intelligent duplicate detection using Canvas UIDs to ensure assignments aren't duplicated on subsequent syncs. It includes robust error handling with exponential backoff retries and supports bulk assignment processing for courses with heavy assignment loads. The parser extracts course codes, assignment details, and due dates, automatically creating tasks with proper class associations and Canvas metadata for seamless integration.

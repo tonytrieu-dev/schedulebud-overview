@@ -80,7 +80,7 @@ graph LR
 
     %% Define connections
     A -- "API Calls & Real-time Stream" --> B
-    
+
     B -- "Invokes" --> F1
     B -- "Invokes" --> F2
     B -- "Invokes" --> F3
@@ -91,9 +91,11 @@ graph LR
     B -- "Manages Auth, RLS, Storage" --> E
     B -- "SMTP Integration" --> I
 
-    F1 -- "Vector Search (RPC)" --> C
+    F1 -- "Intent Classification (Always)" --> F1
+    F1 -- "Vector Search (Document Queries Only ~20%)" --> C
+    F1 -- "Task DB Query (Task Queries Only ~15%)" --> C
     F1 -- "Streaming & Non-Streaming Calls" --> G
-    
+
     F2 -- "File Download" --> E
     F2 -- "Embedding Generation" --> J
     F2 -- "Writes Embeddings" --> C
@@ -109,10 +111,10 @@ graph LR
 
 ## Key Architectural Features & Implementations
 
-### 1. The Stateful, Context-Aware AI Chatbot (RAG Pipeline)
+### 1. The Stateful, Context-Aware AI Chatbot (RAG Pipeline with Smart Routing)
 **Feature:** A chatbot that provides personalized, context-aware, and accurate answers based on a user's private data, conversation history, and real-time task schedule.
 
-**Technical Implementation:** I architected a complete **Retrieval-Augmented Generation (RAG)** pipeline as a serverless function. It uses a `classifyQueryIntent` algorithm to intelligently decide whether to perform an expensive vector search, a simple database query, or a direct LLM call, optimizing cost and latency. The system is self-healing: if a document search fails because files aren't processed, it auto-triggers the embedding function and retries. For a seamless UX, it uses a streaming connection to the Gemini API and serves the response via Server-Sent Events (SSE), with a robust buffer-based parser to prevent text truncation.
+**Technical Implementation:** I architected a complete **Retrieval-Augmented Generation (RAG)** pipeline as a serverless function with intelligent cost optimization. The system uses a `classifyQueryIntent` algorithm to route queries into 4 categories (`document_search`, `task_related`, `general_knowledge`, `conversational`) BEFORE making expensive API calls. This smart routing means **~70-80% of queries skip RAG entirely**, avoiding unnecessary HuggingFace embedding API calls and PostgreSQL vector searches. Only queries explicitly about course materials trigger document retrieval, while task-related questions query the database directly, and general questions use the LLM's knowledge base. The system is self-healing: if a document search fails because files aren't processed, it auto-triggers the embedding function and retries. For a seamless UX, it uses a streaming connection to the Gemini API and serves the response via Server-Sent Events (SSE), with a robust buffer-based parser to prevent text truncation.
 
 **Code Snippet (Query Intent Classification for Cost Optimization):**
 ```typescript
@@ -159,7 +161,7 @@ function classifyQueryIntent(
 
 **Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
 
-### 4. The Canvas LMS Implementation System (ICS Calendar Parsing)
+### 4. The Canvas LMS Integration System (ICS Calendar Parsing)
 **Feature:** Seamless synchronization of Canvas LMS assignments by parsing ICS calendar feeds, automatically importing due dates, assignment names, and course information into ScheduleBud.
 
 **Technical Implementation:** I built a serverless edge function that fetches and parses Canvas ICS calendar feeds server-side, completely bypassing CORS restrictions that plague client-side implementations. The system implements intelligent duplicate detection using Canvas UIDs to ensure assignments aren't duplicated on subsequent syncs. It includes robust error handling with exponential backoff retries and supports bulk assignment processing for courses with heavy assignment loads. The parser extracts course codes, assignment details, and due dates, automatically creating tasks with proper class associations and Canvas metadata for seamless integration.

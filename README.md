@@ -8,7 +8,7 @@
 
 ## Project Overview
 
-ScheduleBud is an AI-native, full-stack productivity platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by syncing Canvas LMS assignments from `.ics` calendar links, parsing syllabi with AI, providing a smart chatbot, and offering real-time task management in a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
+ScheduleBud is an AI-native, full-stack productivity platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by syncing Canvas LMS assignments from `.ics` calendar links, parsing syllabi with AI, providing an intelligent AI agent with RAG capabilities and task management through natural language, and offering real-time task management in a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
 
 ## Live Demo
 
@@ -35,14 +35,14 @@ My design for ScheduleBud was driven by five core principles, essential for a so
 Based on these principles, I architected ScheduleBud as a decoupled, multi-tier system. It consists of a React SPA frontend, a central BaaS platform, and a suite of specialized serverless microservices that handle complex, asynchronous tasks.
 
 ```mermaid
-graph LR
+graph TB
     subgraph "User's Device"
         A[Frontend: React SPA]
     end
 
     %% Main Backend Platform Subgraph
     subgraph P1[ ]
-        direction LR
+        direction TB
         style P1 fill:#f9f7e8,stroke:#e0dcca
 
         %% Manual Title Node for Backend Platform
@@ -50,85 +50,118 @@ graph LR
         style P_Title fill:none,stroke:none,font-weight:bold,font-size:1.1em
 
         B[API Gateway & Auth]
-        C[PostgreSQL Database w/ RLS]
+        C["PostgreSQL Database w/ RLS + pgvector"]
         E[File Storage]
-        
+
         %% Serverless Microservices Group
         subgraph F_Group [ ]
-            direction LR
+            direction TB
             style F_Group fill:#f9f7e8,stroke:#d3d0b8,stroke-dasharray: 5 5
 
             %% Manual Title Node for Serverless Microservices
             F_Title["<b>Serverless Microservices (Edge Functions)</b>"]
             style F_Title fill:none,stroke:none,font-weight:normal,font-style:italic,font-size:1em
 
-            F1["ask-chatbot (RAG Pipeline)"]
-            F2["embed-file (Data Ingestion)"]
-            F3["stripe-webhook (Payments)"]
-            F4["ai-analysis (Structured Extraction)"]
-            F5["canvas-sync (ICS Calendar Parsing)"]
+            %% AI & Document Processing Functions
+            F1["ask-chatbot (AI Agent + RAG)"]
+            F2["embed-file (Vector Embeddings)"]
+            F3["ai-analysis (Syllabus Extraction)"]
+
+            %% Integration Functions
+            F4["canvas-sync (ICS Parsing)"]
+            F5["send-email-notification (Email Service)"]
+
+            %% Payment Functions
+            F6["create-checkout-session (Stripe Checkout)"]
+            F7["create-portal-session (Stripe Portal)"]
+            F8["stripe-webhook (Stripe Events)"]
         end
     end
 
     subgraph "Third-Party Services"
-        G[Google Gemini API]
+        G["Google Gemini API (2.5 Pro & 2.0 Flash)"]
         H[Stripe API]
         I["Resend (SMTP)"]
-        J[Hugging Face API]
+        J["Hugging Face API (BAAI/bge-small-en-v1.5)"]
         K[Canvas LMS ICS Feeds]
     end
 
-    %% Define connections
-    A -- "API Calls & Real-time Stream" --> B
+    %% Frontend to Backend
+    A -->|API Calls & SSE Streaming| B
+    A -->|Realtime Subscriptions| C
 
-    B -- "Invokes" --> F1
-    B -- "Invokes" --> F2
-    B -- "Invokes" --> F3
-    B -- "Invokes" --> F4
-    B -- "Invokes" --> F5
+    %% API Gateway to Edge Functions
+    B --> F1
+    B --> F2
+    B --> F3
+    B --> F4
+    B --> F5
+    B --> F6
+    B --> F7
+    B --> F8
 
-    B -- "Manages Auth, RLS, Storage" --> C
-    B -- "Manages Auth, RLS, Storage" --> E
-    B -- "SMTP Integration" --> I
+    %% API Gateway to Core Services
+    B -->|Auth, RLS, Realtime| C
+    B -->|File Management| E
 
-    F1 -- "Intent Classification (Always)" --> F1
-    F1 -- "Vector Search (Document Queries Only ~20%)" --> C
-    F1 -- "Task DB Query (Task Queries Only ~15%)" --> C
-    F1 -- "Streaming & Non-Streaming Calls" --> G
+    %% AI Agent (ask-chatbot) connections
+    F1 -->|Vector Search & Task CRUD| C
+    F1 -->|SSE Streaming & Tool Calling| G
 
-    F2 -- "File Download" --> E
-    F2 -- "Embedding Generation" --> J
-    F2 -- "Writes Embeddings" --> C
+    %% Document Processing (embed-file) connections
+    F2 -->|Download Files| E
+    F2 -->|Generate Embeddings| J
+    F2 -->|Store Vectors| C
 
-    F3 -- "Webhook Events" --> H
-    F3 -- "Updates Subscription" --> C
+    %% AI Analysis connections
+    F3 -->|Structured Extraction| G
+    F3 -->|Store Extracted Tasks| C
 
-    F4 -- "Structured Data Calls" --> G
+    %% Canvas Sync connections
+    F4 -->|Fetch ICS Data| K
+    F4 -->|Store Tasks & Classes| C
 
-    F5 -- "Fetches ICS Calendar Data" --> K
-    F5 -- "Writes Parsed Tasks" --> C
+    %% Email Service connections
+    F5 -->|Send Emails| I
+    F5 -->|Email Tracking| C
+
+    %% Stripe Payment connections
+    F6 -->|Create Checkout| H
+    F7 -->|Create Portal| H
+    F8 -->|Process Webhooks| H
+    F8 -->|Update Subscription Status| C
 ```
 
 ## Key Architectural Features & Implementations
 
-### 1. The Stateful, Context-Aware AI Chatbot (RAG Pipeline with Smart Routing)
-**Feature:** A chatbot that provides personalized, context-aware, and accurate answers based on a user's private data, conversation history, and real-time task schedule.
+### 1. The AI Agent with RAG Pipeline & Tool Calling (Smart Assistant)
+**Feature:** An intelligent AI agent that combines retrieval-augmented generation (RAG) for answering course-specific questions with function calling capabilities for task management. Users can ask questions about their course materials AND execute CRUD operations on their tasks through natural language (e.g., "Create a Biology homework task due on December 25", "Update my quiz to be due next week", "Delete all completed tasks").
 
-**Technical Implementation:** I architected a complete **Retrieval-Augmented Generation (RAG)** pipeline as a serverless function with intelligent cost optimization. The system uses a `classifyQueryIntent` algorithm to route queries into 4 categories (`document_search`, `task_related`, `general_knowledge`, `conversational`) BEFORE making expensive API calls. This smart routing means **~70-80% of queries skip RAG entirely**, avoiding unnecessary HuggingFace embedding API calls and PostgreSQL vector searches. Only queries explicitly about course materials trigger document retrieval, while task-related questions query the database directly, and general questions use the LLM's knowledge base. The system is self-healing: if a document search fails because files aren't processed, it auto-triggers the embedding function and retries. For a seamless UX, it uses a streaming connection to the Gemini API and serves the response via Server-Sent Events (SSE), with a robust buffer-based parser to prevent text truncation.
+**Technical Implementation:** I architected a **stateless, streaming AI agent** that intelligently routes queries and executes tools when needed. The system uses a `classifyQueryIntent` algorithm to route queries into 4 categories (`document_search`, `task_related`, `general_knowledge`, `conversational`) BEFORE making expensive API calls. This smart routing means **~70-80% of queries skip RAG entirely**, avoiding unnecessary HuggingFace embedding API calls and PostgreSQL vector searches.
+
+**Key Capabilities:**
+
+1. **RAG Pipeline for Document Questions**: Only queries explicitly about course materials trigger document retrieval via vector similarity search (pgvector). The system is self-healing: if a document search fails because files aren't processed, it auto-triggers the embedding function and retries.
+
+2. **Function Calling for Task Management**: The AI can execute 6 CRUD operations through Gemini's tool calling: `create_task`, `update_task`, `delete_task`, `batch_update_tasks`, `search_tasks`, and `search_classes`. The system implements **two-phase execution** for destructive actions (delete, batch operations) - requiring user confirmation before execution, while non-destructive actions execute immediately.
+
+3. **Search-to-ID Resolution**: The AI uses human-friendly search terms (task names like "homework", class names like "Biology"), and the backend automatically resolves them to database IDs through fuzzy matching. Missing classes are auto-created with an `istaskclass` flag to separate AI-managed entities from user-created entities.
+
+4. **Streaming UX**: Server-Sent Events (SSE) deliver real-time responses with a smooth scrolling buffer that provides a typewriter effect at 60 FPS, making the interaction feel responsive even during long responses.
 
 **Code Snippet (Query Intent Classification for Cost Optimization):**
 ```typescript
 function classifyQueryIntent(
-  query: string, 
-  hasClassContext: boolean, 
+  query: string,
+  hasClassContext: boolean,
   hasConversationHistory: boolean
 ): 'document_search' | 'task_related' | 'general_knowledge' | 'conversational' {
   const normalizedQuery = query.toLowerCase().trim();
-  
+
   // Indicator keywords for different categories
   const documentIndicators = ['syllabus', 'lecture', 'reading', 'according to'];
-  const taskIndicators = ['due', 'deadline', 'upcoming', 'overdue', 'my tasks'];
-  
+  const taskIndicators = ['create task', 'update task', 'delete task', 'due', 'deadline'];
+
   // Priority scoring system to determine the most likely intent
   let documentScore = 0;
   let taskScore = 0;
@@ -141,12 +174,12 @@ function classifyQueryIntent(
 
   // Determine the highest score to select the query type
   const maxScore = Math.max(documentScore, taskScore);
-  
+
   if (maxScore < 2) {
     if (hasClassContext) return 'document_search';
     return 'general_knowledge';
   }
-  
+
   return documentScore > taskScore ? 'document_search' : 'task_related';
 }
 ```
@@ -157,9 +190,17 @@ function classifyQueryIntent(
 **Technical Implementation:** This serverless function is designed for resilience and security. It uses a two-stage parsing system, trying a fast library first and then falling back to the more robust `pdfjs-dist` to maximize success. All extracted text is sanitized and validated against security patterns before processing. To ensure data integrity, the function is **idempotent**, deleting any stale embeddings for a file before generating new ones.
 
 ### 3. The Event-Driven Payments System
-**Feature:** A reliable system to manage user subscriptions and synchronize payment status with Stripe.
+**Feature:** A complete subscription management system integrating Stripe checkout, billing portal, and webhook-based payment synchronization.
 
-**Technical Implementation:** I designed an asynchronous, event-driven system using Stripe webhooks. A dedicated serverless function acts as a secure endpoint. Its most critical task is to **cryptographically verify the webhook's signature** before processing any event. It then acts as a state machine, listening for events like `invoice.payment_failed` and updating the user's `subscription_status` in the PostgreSQL database, ensuring data integrity between my app and the payment processor.
+**Technical Implementation:** I designed a three-part serverless payment architecture:
+
+1. **Checkout Session Creation (`create-checkout-session`)**: Securely generates Stripe checkout sessions server-side, preventing client-side price manipulation and ensuring proper subscription tier validation.
+
+2. **Billing Portal Access (`create-portal-session`)**: Provides authenticated users with secure access to Stripe's customer portal for managing subscriptions, payment methods, and billing history.
+
+3. **Webhook Event Processing (`stripe-webhook`)**: An asynchronous, event-driven system using Stripe webhooks. This serverless function acts as a secure endpoint that **cryptographically verifies webhook signatures** before processing events. It operates as a state machine, listening for events like `invoice.payment_succeeded`, `invoice.payment_failed`, and `customer.subscription.deleted`, then updating the user's `subscription_status` in the PostgreSQL database to maintain data integrity between ScheduleBud and Stripe.
+
+All three functions enforce strict security measures, including signature verification, authenticated user validation, and server-side payment processing to prevent tampering.
 
 ### 4. The Canvas LMS Integration System (ICS Calendar Parsing)
 **Feature:** Seamless synchronization of Canvas LMS assignments by parsing ICS calendar feeds, automatically importing due dates, assignment names, and course information into ScheduleBud.

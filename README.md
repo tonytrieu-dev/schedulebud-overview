@@ -47,13 +47,13 @@ flowchart LR
     %% ---------------------------------------------------------
     %% 1. USER LAYER
     %% ---------------------------------------------------------
-    subgraph Client ["User's Device"]
+    subgraph Client ["User Device"]
         direction TB
         A[Frontend: React SPA]:::primary
     end
 
     %% ---------------------------------------------------------
-    %% 2. BACKEND LAYER (Supabase)
+    %% 2. BACKEND LAYER
     %% ---------------------------------------------------------
     subgraph P1 ["Backend Platform (Supabase)"]
         direction TB
@@ -61,93 +61,58 @@ flowchart LR
 
         %% Core Infrastructure
         subgraph CoreInfra ["Core Services"]
-            direction TB
-            style CoreInfra fill:#fff,stroke:none
-            B[API Gateway & Auth]:::primary
-            C[("PostgreSQL DB\n(RLS + pgvector)")]:::db
+            B[API Gateway]:::primary
+            C[("PostgreSQL DB<br/>(RLS + pgvector)")]:::db
             E[File Storage]:::db
         end
 
-        %% Serverless Functions
-        subgraph F_Group ["Serverless Microservices (Edge Functions)"]
+        %% Serverless Functions - FLATTENED FOR CLARITY
+        subgraph F_Group ["Serverless Edge Functions"]
             direction TB
             style F_Group fill:#f0f0f0,stroke:#bbb,rx:5
-
-            %% AI Group
-            subgraph AI_Ops ["AI & Docs"]
-                direction TB
-                style AI_Ops fill:none,stroke:none
-                F1["ask-chatbot\n(AI Agent + RAG)"]:::service
-                F2["embed-file\n(Embeddings)"]:::service
-                F3["ai-analysis\n(Syllabus Extraction)"]:::service
-            end
-
-            %% Integrations Group
-            subgraph Int_Ops ["Integrations"]
-                direction TB
-                style Int_Ops fill:none,stroke:none
-                F4["canvas-sync\n(ICS Parsing)"]:::service
-                F5["send-email\n(Notifications)"]:::service
-            end
-
-            %% Payments Group
-            subgraph Pay_Ops ["Payments"]
-                direction TB
-                style Pay_Ops fill:none,stroke:none
-                F6["create-checkout"]:::service
-                F7["create-portal"]:::service
-                F8["stripe-webhook"]:::service
-            end
+            
+            F1["ask-chatbot<br/>(AI Agent + RAG)"]:::service
+            F2["embed-file<br/>(Embeddings)"]:::service
+            F3["ai-analysis<br/>(Syllabus Extraction)"]:::service
+            F4["canvas-sync<br/>(ICS Parsing)"]:::service
+            F5["stripe-webhooks<br/>(Payments)"]:::service
         end
     end
 
     %% ---------------------------------------------------------
     %% 3. EXTERNAL LAYER
     %% ---------------------------------------------------------
-    subgraph External ["Third-Party Services"]
+    subgraph External ["External APIs"]
         direction TB
-        G["Google Gemini API"]:::service
+        G["Google Gemini"]:::service
         H["Stripe API"]:::service
-        I["Resend (Email)"]:::service
-        J["Hugging Face API"]:::service
-        K["Canvas LMS (ICS)"]:::service
+        J["Hugging Face"]:::service
+        K["Canvas (ICS)"]:::service
     end
 
     %% ---------------------------------------------------------
     %% CONNECTIONS
     %% ---------------------------------------------------------
 
-    %% Client -> Backend
-    A -->|API & SSE| B
-    A -->|Realtime| C
-
-    %% Gateway Routing
+    %% Flow
+    A -->|API/SSE| B
     B --> CoreInfra
     B --> F_Group
 
-    %% Core Services Relations
-    B <--> C
-    B <--> E
-
-    %% Microservices Logic
-    F1 -->|RAG/CRUD| C
+    %% Function Logic
     F1 -->|Tool Call| G
+    F1 -->|Query| C
     
     F2 -->|Vectorize| J
-    F2 -->|Store| C
+    F2 -->|Save| C
     
     F3 -->|Extract| G
-    F3 -->|Save| C
     
     F4 -->|Fetch| K
     F4 -->|Sync| C
     
-    F5 -->|Send| I
-    
-    F6 & F7 -->|Session| H
-    F8 -->|Events| H
-    H -.->|Webhook| F8
-    F8 -->|Update| C
+    F5 <-->|Events| H
+    F5 -->|Update| C
 ```
 
 ## Key Architectural Features & Implementations

@@ -35,101 +35,119 @@ My design for ScheduleBud was driven by five core principles, essential for a so
 Based on these principles, I architected ScheduleBud as a decoupled, multi-tier system. It consists of a React SPA frontend, a central BaaS platform, and a suite of specialized serverless microservices that handle complex, asynchronous tasks.
 
 ```mermaid
-graph TB
-    subgraph "User's Device"
-        A[Frontend: React SPA]
+flowchart LR
+    %% ---------------------------------------------------------
+    %% STYLES
+    %% ---------------------------------------------------------
+    classDef container fill:#f9f7e8,stroke:#d3d0b8,stroke-width:2px,rx:5,ry:5
+    classDef service fill:#fff,stroke:#333,stroke-width:1px
+    classDef primary fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef db fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    
+    %% ---------------------------------------------------------
+    %% 1. USER LAYER
+    %% ---------------------------------------------------------
+    subgraph Client ["User's Device"]
+        direction TB
+        A[Frontend: React SPA]:::primary
     end
 
-    %% Main Backend Platform Subgraph
-    subgraph P1[ ]
+    %% ---------------------------------------------------------
+    %% 2. BACKEND LAYER (Supabase)
+    %% ---------------------------------------------------------
+    subgraph P1 ["Backend Platform (Supabase)"]
         direction TB
-        style P1 fill:#f9f7e8,stroke:#e0dcca
+        style P1 fill:#fcfbf6,stroke:#ccc,stroke-dasharray: 5 5
 
-        %% Manual Title Node for Backend Platform
-        P_Title["<b>Backend Platform (Supabase)</b>"]
-        style P_Title fill:none,stroke:none,font-weight:bold,font-size:1.1em
-
-        B[API Gateway & Auth]
-        C["PostgreSQL Database w/ RLS + pgvector"]
-        E[File Storage]
-
-        %% Serverless Microservices Group
-        subgraph F_Group [ ]
+        %% Core Infrastructure
+        subgraph CoreInfra ["Core Services"]
             direction TB
-            style F_Group fill:#f9f7e8,stroke:#d3d0b8,stroke-dasharray: 5 5
+            style CoreInfra fill:#fff,stroke:none
+            B[API Gateway & Auth]:::primary
+            C[("PostgreSQL DB\n(RLS + pgvector)")]:::db
+            E[File Storage]:::db
+        end
 
-            %% Manual Title Node for Serverless Microservices
-            F_Title["<b>Serverless Microservices (Edge Functions)</b>"]
-            style F_Title fill:none,stroke:none,font-weight:normal,font-style:italic,font-size:1em
+        %% Serverless Functions
+        subgraph F_Group ["Serverless Microservices (Edge Functions)"]
+            direction TB
+            style F_Group fill:#f0f0f0,stroke:#bbb,rx:5
 
-            %% AI & Document Processing Functions
-            F1["ask-chatbot (AI Agent + RAG)"]
-            F2["embed-file (Vector Embeddings)"]
-            F3["ai-analysis (Syllabus Extraction)"]
+            %% AI Group
+            subgraph AI_Ops ["AI & Docs"]
+                direction TB
+                style AI_Ops fill:none,stroke:none
+                F1["ask-chatbot\n(AI Agent + RAG)"]:::service
+                F2["embed-file\n(Embeddings)"]:::service
+                F3["ai-analysis\n(Syllabus Extraction)"]:::service
+            end
 
-            %% Integration Functions
-            F4["canvas-sync (ICS Parsing)"]
-            F5["send-email-notification (Email Service)"]
+            %% Integrations Group
+            subgraph Int_Ops ["Integrations"]
+                direction TB
+                style Int_Ops fill:none,stroke:none
+                F4["canvas-sync\n(ICS Parsing)"]:::service
+                F5["send-email\n(Notifications)"]:::service
+            end
 
-            %% Payment Functions
-            F6["create-checkout-session (Stripe Checkout)"]
-            F7["create-portal-session (Stripe Portal)"]
-            F8["stripe-webhook (Stripe Events)"]
+            %% Payments Group
+            subgraph Pay_Ops ["Payments"]
+                direction TB
+                style Pay_Ops fill:none,stroke:none
+                F6["create-checkout"]:::service
+                F7["create-portal"]:::service
+                F8["stripe-webhook"]:::service
+            end
         end
     end
 
-    subgraph "Third-Party Services"
-        G["Google Gemini API (2.5 Pro & 2.0 Flash)"]
-        H[Stripe API]
-        I["Resend (SMTP)"]
-        J["Hugging Face API (BAAI/bge-small-en-v1.5)"]
-        K[Canvas LMS ICS Feeds]
+    %% ---------------------------------------------------------
+    %% 3. EXTERNAL LAYER
+    %% ---------------------------------------------------------
+    subgraph External ["Third-Party Services"]
+        direction TB
+        G["Google Gemini API"]:::service
+        H["Stripe API"]:::service
+        I["Resend (Email)"]:::service
+        J["Hugging Face API"]:::service
+        K["Canvas LMS (ICS)"]:::service
     end
 
-    %% Frontend to Backend
-    A -->|API Calls & SSE Streaming| B
-    A -->|Realtime Subscriptions| C
+    %% ---------------------------------------------------------
+    %% CONNECTIONS
+    %% ---------------------------------------------------------
 
-    %% API Gateway to Edge Functions
-    B --> F1
-    B --> F2
-    B --> F3
-    B --> F4
-    B --> F5
-    B --> F6
-    B --> F7
-    B --> F8
+    %% Client -> Backend
+    A -->|API & SSE| B
+    A -->|Realtime| C
 
-    %% API Gateway to Core Services
-    B -->|Auth, RLS, Realtime| C
-    B -->|File Management| E
+    %% Gateway Routing
+    B --> CoreInfra
+    B --> F_Group
 
-    %% AI Agent (ask-chatbot) connections
-    F1 -->|Vector Search & Task CRUD| C
-    F1 -->|SSE Streaming & Tool Calling| G
+    %% Core Services Relations
+    B <--> C
+    B <--> E
 
-    %% Document Processing (embed-file) connections
-    F2 -->|Download Files| E
-    F2 -->|Generate Embeddings| J
-    F2 -->|Store Vectors| C
-
-    %% AI Analysis connections
-    F3 -->|Structured Extraction| G
-    F3 -->|Store Extracted Tasks| C
-
-    %% Canvas Sync connections
-    F4 -->|Fetch ICS Data| K
-    F4 -->|Store Tasks & Classes| C
-
-    %% Email Service connections
-    F5 -->|Send Emails| I
-    F5 -->|Email Tracking| C
-
-    %% Stripe Payment connections
-    F6 -->|Create Checkout| H
-    F7 -->|Create Portal| H
-    F8 -->|Process Webhooks| H
-    F8 -->|Update Subscription Status| C
+    %% Microservices Logic
+    F1 -->|RAG/CRUD| C
+    F1 -->|Tool Call| G
+    
+    F2 -->|Vectorize| J
+    F2 -->|Store| C
+    
+    F3 -->|Extract| G
+    F3 -->|Save| C
+    
+    F4 -->|Fetch| K
+    F4 -->|Sync| C
+    
+    F5 -->|Send| I
+    
+    F6 & F7 -->|Session| H
+    F8 -->|Events| H
+    H -.->|Webhook| F8
+    F8 -->|Update| C
 ```
 
 ## Key Architectural Features & Implementations

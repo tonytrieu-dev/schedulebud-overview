@@ -66,7 +66,7 @@ flowchart LR
             E[File Storage]:::db
         end
 
-        %% Serverless Functions - FLATTENED FOR CLARITY
+        %% Serverless Functions
         subgraph F_Group ["Serverless Edge Functions"]
             direction TB
             style F_Group fill:#f0f0f0,stroke:#bbb,rx:5
@@ -75,7 +75,8 @@ flowchart LR
             F2["embed-file<br/>(Embeddings)"]:::service
             F3["ai-analysis<br/>(Syllabus Extraction)"]:::service
             F4["canvas-sync<br/>(ICS Parsing)"]:::service
-            F5["stripe-webhooks<br/>(Payments)"]:::service
+            F5["send-email<br/>(Notifications)"]:::service
+            F6["stripe-webhooks<br/>(Payments)"]:::service
         end
     end
 
@@ -88,6 +89,7 @@ flowchart LR
         H["Stripe API"]:::service
         J["Hugging Face"]:::service
         K["Canvas (ICS)"]:::service
+        L["Resend API"]:::service
     end
 
     %% ---------------------------------------------------------
@@ -111,8 +113,10 @@ flowchart LR
     F4 -->|Fetch| K
     F4 -->|Sync| C
     
-    F5 <-->|Events| H
-    F5 -->|Update| C
+    F5 -->|Send| L
+    
+    F6 <-->|Events| H
+    F6 -->|Update| C
 ```
 
 ## Key Architectural Features & Implementations

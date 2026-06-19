@@ -1,4 +1,4 @@
-# ScheduleBud: AI-Powered Task Management Platform
+# ScheduleBud: AI-Powered Academic Scheduling for College Students
 
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-green)](https://schedulebud.app/) [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/) [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue)](https://www.typescriptlang.org/) [![Supabase](https://img.shields.io/badge/Supabase-Edge%20Functions-blue)](https://supabase.com/) [![AI Powered](https://img.shields.io/badge/AI-Gemini%202.5%20Pro-purple)](https://deepmind.google/technologies/gemini/)
 
@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-ScheduleBud is an AI-powered task management platform designed to help students manage their academic lives. It solves the problem of fragmented academic tools by syncing Canvas LMS assignments from `.ics` calendar links, parsing syllabi with AI, providing an intelligent AI agent with RAG capabilities and task management through natural language, and offering real-time task management in a single, intuitive interface. ScheduleBud is built for the modern student who needs to stay organized and efficient.
+ScheduleBud is an AI-powered platform that automates academic scheduling for college students. It consolidates the fragmented tools a student juggles into a single interface: it syncs Canvas LMS assignments from `.ics` calendar feeds, pulls in course announcements through the Canvas API, uses Google Gemini to extract every deadline from an uploaded syllabus, and exposes an AI agent with RAG and function-calling capabilities that manages tasks and answers course-specific questions through natural language. The result is a self-healing, cost-optimized system that takes scheduling off the student's plate.
 
 ## Live Demo
 
@@ -190,7 +190,7 @@ All three functions enforce strict security measures, including signature verifi
 ### 4. The Canvas LMS Implementation System (ICS Calendar Parsing)
 **Feature:** Seamless synchronization of Canvas LMS assignments by parsing ICS calendar feeds, automatically importing due dates, assignment names, and course information into ScheduleBud.
 
-**Technical Implementation:** I built a serverless edge function that fetches and parses Canvas ICS calendar feeds server-side, completely bypassing CORS restrictions that plague client-side implementations. The system implements intelligent duplicate detection using Canvas UIDs to ensure assignments aren't duplicated on subsequent syncs. It includes robust error handling with exponential backoff retries and supports bulk assignment processing for courses with heavy assignment loads. The parser extracts course codes, assignment details, and due dates, automatically creating tasks with proper class associations and Canvas metadata for seamless integration.
+**Technical Implementation:** I built a serverless edge function that fetches and parses Canvas ICS calendar feeds server-side, completely bypassing CORS restrictions that plague client-side implementations. The system implements intelligent duplicate detection using Canvas UIDs to ensure assignments aren't duplicated on subsequent syncs. It includes robust error handling with exponential backoff retries and supports bulk assignment processing for courses with heavy assignment loads. The parser extracts course codes, assignment details, and due dates, automatically creating tasks with proper class associations and Canvas metadata for seamless integration. A companion `canvas-announcements` function brings in course announcements the same way, so students get their deadlines and their instructor updates in one place.
 
 ### 5. The AI-Powered Document Analysis Engine
 **Feature:** Intelligent extraction of structured academic metadata from user-uploaded documents, automatically detecting courses, assignments, due dates, and academic requirements from syllabi and course materials.
